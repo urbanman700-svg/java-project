@@ -1,5 +1,6 @@
 package com.kd.note;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,13 +8,16 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder> {
-    private List<Note> noteList;
 
-    public NoteAdapter(List<Note> noteList) {
-        this.noteList = noteList;
+    private ArrayList<Note> notes;
+    private Context context;
+
+    public NoteAdapter(ArrayList<Note> notes, Context context) {
+        this.notes = notes;
+        this.context = context;
     }
 
     @Override
@@ -24,24 +28,39 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @Override
     public void onBindViewHolder(NoteViewHolder holder, int position) {
-        Note note = noteList.get(position);
+        Note note = notes.get(position);
         holder.titleTextView.setText(note.getTitle());
         holder.contentTextView.setText(note.getContent());
+        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                notes.remove(position);
+                notifyDataSetChanged();
+            }
+        });
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Handle item click
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return noteList.size();
+        return notes.size();
     }
 
     public class NoteViewHolder extends RecyclerView.ViewHolder {
         public TextView titleTextView;
         public TextView contentTextView;
+        public View deleteButton;
 
-        public NoteViewHolder(View view) {
-            super(view);
-            titleTextView = view.findViewById(R.id.title_text_view);
-            contentTextView = view.findViewById(R.id.content_text_view);
+        public NoteViewHolder(View itemView) {
+            super(itemView);
+            titleTextView = itemView.findViewById(R.id.title_text_view);
+            contentTextView = itemView.findViewById(R.id.content_text_view);
+            deleteButton = itemView.findViewById(R.id.delete_button);
         }
     }
 }
