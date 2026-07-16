@@ -2,50 +2,66 @@ package com.kd.note;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NoteAdapter.OnNoteClickListener {
 
-    private ArrayList<Note> notes;
-    private NoteAdapter noteAdapter;
+    public static final String EXTRA_TITLE = "extra_title";
+    public static final String EXTRA_CONTENT = "extra_content";
+
     private RecyclerView recyclerView;
+    private NoteAdapter noteAdapter;
+    private List<Note> noteList;
+
+    private final ActivityResultLauncher<Intent> addNoteLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    String title = result.getData().getStringExtra(EXTRA_TITLE);
+                    String content = result.getData().getStringExtra(EXTRA_CONTENT);
+                    if (title != null && !title.trim().isEmpty()) {
+                        noteList.add(0, new Note(title, content));
+                        noteAdapter.notifyItemInserted(0);
+                        recyclerView.scrollToPosition(0);
+                    }
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        notes = new ArrayList<>();
-        noteAdapter = new NoteAdapter(notes, this);
-
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        noteList = new ArrayList<>();
+        noteAdapter = new NoteAdapter(noteList, this);
         recyclerView.setAdapter(noteAdapter);
 
-        findViewById(R.id.add_note_fab).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, AddNoteActivity.class);
-                startActivityForResult(intent, 1);
-            }
+        FloatingActionButton fab = findViewById(R.id.fab_add_note);
+        fab.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, AddNoteActivity.class);
+            addNoteLauncher.launch(intent);
         });
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            String title = data.getStringExtra("title");
-            String content = data.getStringExtra("content");
-            notes.add(new Note(title, content));
-            noteAdapter.notifyDataSetChanged();
-        }
+    public void onDeleteClick(int position) {
+        if (position < 0 || position >= noteList.size()) return;
+        noteList.remove(position);
+        noteAdapter.notifyItemRemoved(position);
+        noteAdapter.notifyItemRangeChanged(position, noteList.size());
+        Toast.makeText(this, "Note deleted", Toast.LENGTH_SHORT).show();
     }
 }

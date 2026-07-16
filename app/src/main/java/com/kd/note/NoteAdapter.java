@@ -1,23 +1,27 @@
 package com.kd.note;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder> {
 
-    private ArrayList<Note> notes;
-    private Context context;
+    public interface OnNoteClickListener {
+        void onDeleteClick(int position);
+    }
 
-    public NoteAdapter(ArrayList<Note> notes, Context context) {
-        this.notes = notes;
-        this.context = context;
+    private final List<Note> noteList;
+    private final OnNoteClickListener listener;
+
+    public NoteAdapter(List<Note> noteList, OnNoteClickListener listener) {
+        this.noteList = noteList;
+        this.listener = listener;
     }
 
     @Override
@@ -28,39 +32,32 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @Override
     public void onBindViewHolder(NoteViewHolder holder, int position) {
-        Note note = notes.get(position);
+        Note note = noteList.get(position);
         holder.titleTextView.setText(note.getTitle());
         holder.contentTextView.setText(note.getContent());
-        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                notes.remove(position);
-                notifyDataSetChanged();
-            }
-        });
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Handle item click
+        holder.deleteButton.setOnClickListener(v -> {
+            int adapterPosition = holder.getAdapterPosition();
+            if (listener != null && adapterPosition != RecyclerView.NO_POSITION) {
+                listener.onDeleteClick(adapterPosition);
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return notes.size();
+        return noteList.size();
     }
 
-    public class NoteViewHolder extends RecyclerView.ViewHolder {
+    public static class NoteViewHolder extends RecyclerView.ViewHolder {
         public TextView titleTextView;
         public TextView contentTextView;
-        public View deleteButton;
+        public ImageButton deleteButton;
 
-        public NoteViewHolder(View itemView) {
-            super(itemView);
-            titleTextView = itemView.findViewById(R.id.title_text_view);
-            contentTextView = itemView.findViewById(R.id.content_text_view);
-            deleteButton = itemView.findViewById(R.id.delete_button);
+        public NoteViewHolder(View view) {
+            super(view);
+            titleTextView = view.findViewById(R.id.title_text_view);
+            contentTextView = view.findViewById(R.id.content_text_view);
+            deleteButton = view.findViewById(R.id.delete_button);
         }
     }
 }
